@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="us-ascii"?>
+<application xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" id="application">
+  <jobTemplates>
+    <jobTemplate id="data-driven">
+      <streamingExecutable>/application/data-driven/run</streamingExecutable>
+      <defaultParameters>
+        <parameter id="data_pipeline" title="Trigger: Data pipeline identifier" abstract="Data pipeline identifier" maxOccurs="1" scope="runtime" type="LiteralData">better-wfp-00001</parameter>
+        <parameter id="wps_url" title="Trigger: WPS access point URL" abstract="WPS access point URL" maxOccurs="1" scope="runtime" type="LiteralData">https://ec-better-apps-deployer.terradue.com/zoo/</parameter>
+        <parameter id="process_id" title="Trigger: Process identifier" abstract="Process identifier" maxOccurs="1" scope="runtime" type="LiteralData">ec_better_wfp_01_01_01_wfp_01_01_01_1_0</parameter>
+        <parameter id="update" type="opensearch" target="dct:modified" scope="runtime" maxOccurs="1" title="Trigger: Time of Interest interval" abstract="Time of Interest interval in ISO 8601 (e.g. 2016-04-21T06:50:41Z)">2018-05-29T00:00:00.000Z/2018-05-30T00:00:00.000Z</parameter> 
+        <parameter id="api_key" title="Trigger: Terradue API key" abstract="Terradue API key" maxOccurs="1" scope="runtime" type="LiteralData">AKCp5bAisopxtSEvkgNryzYzxT6UBv7ahyBnyszSbb6dZtct3ceRfSrieyznjjUsNynvT2XuK</parameter>
+          <parameter id="recovery" title="Trigger: Recovery mode" abstract="Set to 'Yes' to use the recovery mode" maxOccurs="1" scope="runtime" type="LiteralData">
+              <options>
+                <option>No</option>
+                <option>Yes</option>
+                <default>No</default>
+             </options>
+          </parameter>
+          <parameter id="mode" title="Trigger: mode" abstract="Set to 'Via' to use the via mode (source-queue and source-err), 'Queue' for feeding the source-queue, 'Nominal' for processing" maxOccurs="1" scope="test" type="LiteralData">Via</parameter>
+     </defaultParameters>
+     <defaultJobconf>
+        <property id="mapred.task.timeout">604800000</property>
+      </defaultJobconf>
+    </jobTemplate>
+  </jobTemplates>
+  <workflow id="tg-better-wfp-00001-via" title="WFP-01-01-01 Trigger - Via" abstract="Trigger for the WFP-01-01-01 Sentinel-1 backscatter timeseries data pipeline - Via">
+    <workflowVersion>1.0</workflowVersion>
+    <node id="data-driven">
+      <job id="data-driven"/>
+      <sources>
+        <source id="series" refid="cas:series" scope="runtime" title="Trigger: Catalogue URL" abstract="Catalogue URL" maxOccurs="1">https://catalog.terradue.com/better-wfp-00001/series/source-queue/description</source>
+      </sources>
+    </node>
+  </workflow>
+</application>
