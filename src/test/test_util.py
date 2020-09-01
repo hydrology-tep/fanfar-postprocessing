@@ -1,42 +1,38 @@
-#!/opt/anaconda/bin/python
+#!/opt/anaconda/envs/env_fanfar_post_processing/bin/python
 
 import sys
 import os
 import unittest
 import string
 from StringIO import StringIO
-import py_compile
 
 # Simulating the Runtime environment
 os.environ['TMPDIR'] = '/tmp'
 os.environ['_CIOP_APPLICATION_PATH'] = '/application'
 os.environ['ciop_job_nodeid'] = 'dummy'
-os.environ['ciop_wf_run_root'] = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'artifacts')
+os.environ['ciop_wf_run_root'] = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'env_fanfar_post_processing')
 
-#sys.path.append('../main/app-resources/util/')
+sys.path.append('../main/app-resources/util/')
 
-#from util import log_input
+from util import log_input
 
 class NodeATestCase(unittest.TestCase):
 
     def setUp(self):
         pass
 
-    
-    def test_split(self):
-        s = 'hello world'
-        self.assertEqual(s.split(), ['hello', 'world'])
-        # check that s.split fails when the separator is not a string
-        with self.assertRaises(TypeError):
-            s.split(2)
+    def test_log(self):
+        # Example of data reference passed as input
+        input_reference = "https://data2.terradue.com/eop/sentinel2/dataset/search?uid=S2A_OPER_PRD_MSIL1C_PDMC_20160508T221513_R008_V20160508T104027_20160508T104027"
 
-    def test_compile(self):
-        try:
-          py_compile.compile('../main/app-resources/data-driven/run', doraise=True)
-        except:
-          self.fail('failed to compile src/main/app-resources/data-driven/run')
- 
+        # The log function uses ciop.log, which writes on stderr. Therefore we
+        # need to check the stderr to test the function.
+        stderr = StringIO()
+        sys.stderr = stderr
+        log_input(input_reference)
+        output = stderr.getvalue()
+        log_message = string.split(output ,'\n')[1][27:]
+        self.assertEqual(log_message, "[INFO   ] [user process] processing input: "+ input_reference, "Input reference not logged")
+
 if __name__ == '__main__':
     unittest.main()
-
-

@@ -1,0 +1,19 @@
+#!/opt/anaconda/envs/env_fanfar_post_processing/bin/Rscript --vanilla --slave --quiet
+
+library("rciop")
+
+source(paste(Sys.getenv("_CIOP_APPLICATION_PATH"), "util", "util.R", sep="/"))
+
+f <- file("stdin")
+open(f)
+
+# Input references come from STDIN (standard input) and they are retrieved
+# line-by-line.
+while(length(reference <- readLines(f, n=1)) > 0) {
+    
+    rciop.log("INFO", paste("processing reference: ", reference))
+    
+    rciop.publish(reference, mode="silent")
+    
+}
+

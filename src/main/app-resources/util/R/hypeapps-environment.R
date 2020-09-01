@@ -36,7 +36,8 @@ if(app.sys=="tep"){
   app.app_path = Sys.getenv("_CIOP_APPLICATION_PATH")
   app.tmp_path = TMPDIR
 }else if(app.sys=="win"){
-  app.app_path = paste(getwd(),'application',sep="/")
+  setwd("E:/AGRHYMET/FANFAR/git/post_processing_fanfar/fanfar-post-processing/src/main")
+  app.app_path = paste(getwd(),'app-resources',sep="/")
   app.tmp_path = paste(getwd(),'tmp',sep="/")
 }else{
   app.app_path = ""
@@ -52,13 +53,13 @@ if(app.sys=="tep"){
 }else{
   app.rscript4plotting = "Rscript"
 }
-app.plotscriptBasinOutput    = paste(app.app_path,"util/R/hypeapps-plot-basinoutput.R",sep="/")
-app.plotscriptMapOutput      = paste(app.app_path,"util/R/hypeapps-plot-mapoutput.R",sep="/")
-app.plotscriptForecastBasin  = paste(app.app_path,"util/R/hypeapps-plot-forecast-basin.R",sep="/")
-app.plotscriptWarningLevelMap= paste(app.app_path,"util/R/hypeapps-plot-warninglevel-map.R",sep="/")
+#app.plotscriptBasinOutput    = paste(app.app_path,"util/R/hypeapps-plot-basinoutput.R",sep="/")
+#app.plotscriptMapOutput      = paste(app.app_path,"util/R/hypeapps-plot-mapoutput.R",sep="/")
+#app.plotscriptForecastBasin  = paste(app.app_path,"util/R/hypeapps-plot-forecast-basin.R",sep="/")
+#app.plotscriptWarningLevelMap= paste(app.app_path,"util/R/hypeapps-plot-warninglevel-map.R",sep="/")
 
 ## Model settings and data access information
-if(app.sys=="tep"){source(paste(Sys.getenv("_CIOP_APPLICATION_PATH"), "util/R/hypeapps-model-settings.R",sep="/"))}
+if(app.sys=="tep"){source(paste(Sys.getenv("_CIOP_APPLICATION_PATH"), "util/R/hypeapps-processing-settings.R",sep="/"))}
 if(app.sys=="tep"){rciop.log ("DEBUG", paste("model and data access settings sourced"), "/util/R/hypeapps-environment.R")}
 
 ## Flag that this file has been sourced

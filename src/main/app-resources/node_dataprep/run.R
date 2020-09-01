@@ -1,12 +1,12 @@
 #!/opt/anaconda/bin/Rscript --vanilla --slave --quiet
 #
-# /hypeapps-eodata/src/main/app-resources/node_eodata/run.R
+# /hypeapps-eodata/src/main/app-resources/node_dataprep/run.R
 
 
-# begin victor naslund
+# begin Bernard Minoungou
 
 
-# Copyright 2017 SMHI
+# Copyright 2019-2020 AGRHYMET
 #
 # This file is part of H-TEP Hydrological Modelling Application, which is open source 
 # and distributed under the terms of the Lesser GNU General Public License as published by
@@ -18,9 +18,9 @@
 # GNU General Public License along with the Hydrology TEP Hydrological Modelling Application. 
 # If not, see <http://www.gnu.org/licenses/>.
 
-# Application 3: "EO data pre-processing" (hypeapps-eodata)
-# Author:         David Gustafsson, SMHI
-# Version:        2018-02-06
+# Application 1: "FANFAR Post-processing" (hypeapps-postprocessing)
+# Author:         Bernard Minoungou, AGRHYMET
+# Version:        2020-05-19
 
 #################################################################################
 ## 1 - Initialization
@@ -29,9 +29,10 @@
 app.date = format(Sys.time(), "%Y%m%d_%H%M")
 
 ## set application name
-app.name = "eodata"
+app.name = "postprocessing"
 ## ------------------------------------------------------------------------------
 ## flag which environment is used, if not set
+#app.sys="win"
 if(!exists("app.sys")){
   app.sys ="tep"
 }
@@ -41,37 +42,38 @@ if(!exists("app.sys")){
 if(app.sys=="tep"){
   library("rciop")
   
-  rciop.log ("DEBUG", " *** hypeapps-eodata *** TEP hydrological modelling applications ***", "/node_eodata/run.R")
-  rciop.log ("DEBUG", " rciop library loaded", "/node_eodata/run.R")
+  rciop.log ("DEBUG", " *** hypeapps-postprocessing *** TEP hydrological modelling applications ***", "/node_dataprep/run.R")
+  rciop.log ("DEBUG", " rciop library loaded", "/node_dataprep/run.R")
   
   setwd(TMPDIR)
-  rciop.log("DEBUG", paste(" R session working directory set to ",TMPDIR,sep=""), "/node_eodata/run.R")
+  rciop.log("DEBUG", paste(" R session working directory set to ",TMPDIR,sep=""), "/node_dataprep/run.R")
 }
 
 
 
 # wrap all code in a foor loop over the stdin
 
-# begin victor naslund
-f<-file('stdin', 'r')
+# read the inputs coming from stdin
+#f <- file("stdin")
+#open(f)
 
-while(length(input <- readLines(f, n=1)) > 0) {
-
-    sysCmd=paste("opensearch-client '",input,"' cat,enclosure")
-    wlFile <- system(command = sysCmd,intern = T)
-
-    for (x in strsplit(wlFile, "\n")) {
-
-        t = strsplit(x, ",", fixed=TRUE)[[1]][1]
-        e = strsplit(x, ",", fixed=TRUE)[[1]][2]
-
-        if (toString(t) == "AMWL") {
-            dcmd = paste("ciop-copy '", e, "'")
-            dfile = system(dcmd, intern = T)
-            in_wlData <- e
-       }                
-        # if file exists..              
-    }
+#while(length(input <- readLines(f, n=1)) > 0) {
+  
+ # rciop.log("INFO", paste("processing input:", input, sep=" "))
+  
+  # copy the input to the process temporary folder TMPDIR
+  #res <- rciop.copy(input, TMPDIR, uncompress=TRUE)
+  
+  #if (res$exit.code==0) local.url <- res$output
+  
+  #mycsv <- read.csv(local.url)
+  
+  # do something with the downloaded csv here in TMPDIR/output
+  
+  # publish the any results done 
+  #rciop.publish(paste(TMPDIR,"output", sep="/"), recursive=TRUE, metalink=FALSE)
+ 
+#}
     #print (row)
 
     # <property id="ciop.job.max.tasks">1</property> to the metadata
@@ -87,7 +89,7 @@ while(length(input <- readLines(f, n=1)) > 0) {
     #q()
     # end victor naslund
 
-}
+#}
 
 #q()
 
@@ -98,10 +100,11 @@ while(length(input <- readLines(f, n=1)) > 0) {
 if(app.sys=="tep"){
   source(paste(Sys.getenv("_CIOP_APPLICATION_PATH"), "util/R/hypeapps-environment.R",sep="/"))
   source(paste(Sys.getenv("_CIOP_APPLICATION_PATH"), "util/R/hypeapps-utils.R", sep="/"))
-  rciop.log ("DEBUG", paste(" libraries loaded and utilities sourced"), "/node_eodata/run.R")
+  rciop.log ("DEBUG", paste(" libraries loaded and utilities sourced"), "/node_dataprep/run.R")
 }else if(app.sys=="win"){
-  source("application/util/R/hypeapps-environment.R")  
-  source("application/util/R/hypeapps-utils.R")
+  setwd("E:/AGRHYMET/FANFAR/git/post_processing_fanfar/fanfar-post-processing/src/main")
+  source(paste(getwd(), "app-resources/util/R/hypeapps-environment.R", sep="/"))  
+  source(paste(getwd(), "app-resources/util/R/hypeapps-utils.R", sep="/"))
 }
 ## open application logfile
 logFile=appLogOpen(appName = app.name,tmpDir = getwd(),appDate = app.date, prefix = "000")
@@ -109,76 +112,15 @@ logFile=appLogOpen(appName = app.name,tmpDir = getwd(),appDate = app.date, prefi
 ## 2 - Application user inputs
 ## ------------------------------------------------------------------------------
 ## application input parameters
-app.input <- getHypeAppInput(appName = app.name, in_wlData)
+app.input <- getHypeAppInput(appName = app.name)
 
-if(app.sys=="tep"){rciop.log ("DEBUG", paste("...hypeapps-eodata input parameters read"), "/node_eodata/run.R")}
 log.res=appLogWrite(logText = "Inputs and parameters read",fileConn = logFile$fileConn)
-
-if(app.input$wlDataInput){
-
-#################################################################################
-## 3 - Application setup
-## -------------------------------------------------------------------------------
-## prepare working directories and copy necessary model files
-app.setup <- getHypeAppSetup(modelName = model.name,
-                             modelBin  = model.bin,
-                             tmpDir    = app.tmp_path,
-                             appDir    = app.app_path,
-                             appName   = app.name,
-                             appInput  = app.input,
-                             modelFilesURL = model.files.url)
-
-if(app.sys=="tep"){rciop.log ("DEBUG", paste("...hypeapps-eodata setup prepared"), "/node_eodata/run.R")}
-log.res=appLogWrite(logText = "Application setup prepared",fileConn = logFile$fileConn)
-
-#################################################################################
-## 4 - Download and process EO data
-## -------------------------------------------------------------------------------
-## get eo data from open catalogue
-eo.data <- getEoData(appInput = app.input,
-                     appSetup = app.setup)
-if(app.sys=="tep"){rciop.log ("DEBUG", paste("eodata downloaded from catalogue"), "/node_eodata/run.R")}
-log.res=appLogWrite(logText = "eodata downloaded from catalogue",fileConn = logFile$fileConn)
-
-## -------------------------------------------------------------------------------
-## Read eodata and prepare data on the Xobs format
-xobs.data <- readEoData(appSetup = app.setup,
-                        eoData = eo.data)
-if(app.sys=="tep"){rciop.log ("DEBUG", paste("eodata processed to HYPE xobs format"), "/node_eodata/run.R")}
-log.res=appLogWrite(logText = "eodata processed to HYPE xobs format",fileConn = logFile$fileConn)
-
-#################################################################################
-## 5 - Write Xobs file and publish
-## -------------------------------------------------------------------------------
-## Write eo data in Xobs format
-app.output = writeEoData(appSetup = app.setup,
-                         xobsData = xobs.data,
-                         appDate  = app.date)
-
-if(app.sys=="tep"){rciop.log ("DEBUG", paste("eodata xobsfile written to output"), "/node_eodata/run.R")}
-log.res=appLogWrite(logText = "eodata xobsfile written to output",fileConn = logFile$fileConn)
-
-
-## ------------------------------------------------------------------------------
-## publish postprocessed results
-if(app.sys=="tep"){
-  #rciop.publish(path=paste(app.output$outDir,"/*",sep=""), recursive=FALSE, metalink=TRUE)
-  for(k in 1:length(app.output$files)){
-    rciop.publish(path=app.output$files[k], recursive=FALSE, metalink=FALSE)
-  }
-  log.res=appLogWrite(logText = "application output published",fileConn = logFile$fileConn)
-}
-
-}else{
-  log.res=appLogWrite(logText = "something wrong with application input... application stops",fileConn = logFile$fileConn)
-}
 
 ## close and publish the logfile
 log.file=appLogClose(appName = app.name,fileConn = logFile$fileConn)
 if(app.sys=="tep"){
   rciop.publish(path=logFile$fileName, recursive=FALSE, metalink=FALSE)
 }
-
 ## ------------------------------------------------------------------------------
 ## exit with appropriate status code
 q(save="no", status = 0)

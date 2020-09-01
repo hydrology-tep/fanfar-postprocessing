@@ -20,24 +20,24 @@
 # -------------------------------------------------------------------
 # 1 - Argument inputs
 # -------------------------------------------------------------------
-args         = commandArgs(trailingOnly=TRUE)
-fileDir      = args[1]   # folder with mapoutput files
-plotDir      = args[2]   # folder where the plot files should be written
-mapFile      = args[3]   # mapoutput filename
-modelName    = args[4]   # modelName (used for plot main title)
-rdataFile    = args[5]   # path to rdata file with subbasin spatial polygons data frame
-prefix.png   = args[6]   # png filename prefix
-cdate        = args[7]   # start of simulation
-edate        = args[8]   # end of simulation
- 
+#args         = commandArgs(trailingOnly=TRUE)
+#fileDir      = args[1]   # folder with mapoutput files
+#plotDir      = args[2]   # folder where the plot files should be written
+#mapFile      = args[3]   # mapoutput filename
+#modelName    = args[4]   # modelName (used for plot main title)
+#rdataFile    = args[5]   # path to rdata file with subbasin spatial polygons data frame
+#prefix.png   = args[6]   # png filename prefix
+#cdate        = args[7]   # start of simulation
+#edate        = args[8]   # end of simulation
+
 # -------------------------------------------------------------------
 # 2 - Working directory
 # -------------------------------------------------------------------
-setwd(plotDir)
+#setwd(plotDir)
 # -------------------------------------------------------------------
 # 3 - Dependancies
 # -------------------------------------------------------------------
-library(rciop)
+#library(rciop)
 library(data.table) # to read the basinoutput file
 library(Cairo)      # graphics device for output files
 library(sp)         # sp for reading Rdata file
@@ -50,6 +50,7 @@ pngORjpg = 0        # 0=> png, 1=>jpg
 
 ### colors from HYPEtools
 ### ---------------------
+ColDiffPop<-colorRampPalette(c("#da62ed", "#300275"))
 ColNitr <- colorRampPalette(c("#fff5a8", "#6b0601"))
 ColPhos <- colorRampPalette(c("#dcf5e9", "#226633"))
 ColPrec <- colorRampPalette(c("#e0e7e8", "#00508c"))
@@ -65,24 +66,61 @@ ColPurples <- colorRampPalette(c("#da62ed", "#300275"))
 
 ### PlotMapOutput from HYPEtools
 ### ----------------------------
-PlotMapOutput <- function(x, map, map.subid.column = 1, var.name = "", map.adj = 0, plot.legend = T, 
+PlotMapOutput <- function(appInput  = app.input, appSetput=app.setup,  map.subid.column = 2, var.name = "", map.adj = 0, plot.legend = T, 
                           legend.pos = "right", legend.title = NULL, legend.outer = F, legend.inset = c(0, 0), 
                           col.ramp.fun = "auto", col.breaks = NULL, plot.scale = T, plot.arrow = T, 
                           par.cex = 1, par.mar = rep(0, 4) + .1, add = FALSE, restore.par = FALSE,main.title=NULL,par.mai=NULL) {
+  name.wl.png<-paste0("002_mapWarningLevel_", appInput$area, ".png")
+  plotFileName = paste(appSetput$resDir,name.wl.png, sep="/")
+  # Plot dimensions and World file
+  load(paste(appSetput$runDir, "shapefile", paste0(model.name, ".Rdata"), sep="/"))
+  shapefileData<-shapefilebasinData
+  
+  ydiff = bbox(shapefileData)[2,2]-bbox(shapefileData)[2,1]
+  xdiff = bbox(shapefileData)[1,2]-bbox(shapefileData)[1,1]
+  
+  width = round(xdiff/(1/60),digits=0)
+  height = round(width * ydiff/xdiff*1.03,digits=0)
+  
+  cx = bbox(shapefileData)[1,2] - 0.5 * (bbox(shapefileData)[1,2]-bbox(shapefileData)[1,1])
+  cy = bbox(shapefileData)[2,2] - 0.5 * (bbox(shapefileData)[2,2]-bbox(shapefileData)[2,1])
+  wfres = writeWorldFile(paste(plotFileName,"w",sep=""), pxWidth=round(width,digits=0), pxHeight=height,
+                         degWidth=xdiff,degHeight=ydiff, lonBasin=cx, latBasin=cy, plotPos="center")
+  load(paste(appSetput$runDir, "shapefile", "countries_fanfar.Rdata", sep="/"))
+  countries.shp<-shapefilecountriesData
+  subbasin.shp<-shapefilebasinData
+  if(appInput$model=="niger-hype") { 
+    if(appInput$area %in% countries_niger.basin) {
+      if(appInput$area!="Niger Basin") {
+        countries.shp.area<-countries.shp[countries.shp@data$CNTRY_NAME==appInput$area,]
+        subbasin.shp.area<-crop(subbasin.shp,countries.shp.area)
+        shapefileData<-subbasin.shp.area
+      }
+    } else {
+      print("The country is not part of the Niger Basin")
+    }
+  } else if((appInput$model=="ww-hype"|appInput$model=="mosaic-hype")&appInput$area!="wa") {
+    countries.shp.area<-countries.shp[countries.shp@data$CNTRY_NAME==appInput$area,]
+    subbasin.shp.area<-crop(subbasin.shp,countries.shp.area)
+    shapefileData<-subbasin.shp.area
+  }
+  prefix.png="002"
+  graphScale<-1.6
+  
   
   # input argument checks
-#  stopifnot(is.data.frame(x), dim(x)[2] == 2, class(map)=="SpatialPolygonsDataFrame", 
-#            is.null(col.breaks) || is.numeric(col.breaks))
-#  stopifnot(map.adj %in% c(0, .5, 1))
-#  stopifnot(legend.pos %in% c("bottomright", "right", "topright", "topleft", "left", "bottomleft"))
-#  if (length(col.breaks) == 1) {
-#    col.breaks <- range(x[, 2], na.rm = T)
-#    warning("Just one value in user-provided argument 'col.breaks', set to range of 'x[, 2]'.")
-#  }
-#  if (!is.null(col.breaks) && (min(col.breaks) > min(x[, 2], na.rm = T) || max(col.breaks) < max(x[, 2], na.rm = T))) {
-#    warning("Range of user-provided argument 'col.breaks' does not cover range of 'x[, 2]. 
-#            Areas outside range will be excluded from plot.")
-#  }
+  #  stopifnot(is.data.frame(x), dim(x)[2] == 2, class(map)=="SpatialPolygonsDataFrame", 
+  #            is.null(col.breaks) || is.numeric(col.breaks))
+  #  stopifnot(map.adj %in% c(0, .5, 1))
+  #  stopifnot(legend.pos %in% c("bottomright", "right", "topright", "topleft", "left", "bottomleft"))
+  #  if (length(col.breaks) == 1) {
+  #    col.breaks <- range(x[, 2], na.rm = T)
+  #    warning("Just one value in user-provided argument 'col.breaks', set to range of 'x[, 2]'.")
+  #  }
+  #  if (!is.null(col.breaks) && (min(col.breaks) > min(x[, 2], na.rm = T) || max(col.breaks) < max(x[, 2], na.rm = T))) {
+  #    warning("Range of user-provided argument 'col.breaks' does not cover range of 'x[, 2]. 
+  #            Areas outside range will be excluded from plot.")
+  #  }
   
   # add y to legend inset if not provided by user
   if (length(legend.inset) == 1) {
@@ -90,24 +128,25 @@ PlotMapOutput <- function(x, map, map.subid.column = 1, var.name = "", map.adj =
   }
   
   # save current state of par() variables which are altered below, for restoring on function exit
-  par.mar0 <- par("mar")
-  par.xaxs <- par("xaxs")
-  par.yaxs <- par("yaxs")
-  par.lend <- par("lend")
-  par.xpd <- par("xpd")
-  par.cex0 <- par("cex")
-  par.mai0 <- par("mai")
-  if(is.null(par.mai)){
-    par.mai = par.mai0
-  }
-  if (restore.par) {
-    on.exit(par(mar = par.mar0, xaxs = par.xaxs, yaxs = par.yaxs, lend = par.lend, xpd = par.xpd, cex = par.cex0, mai = par.mai0))
-  }
+  #par.mar0 <- par("mar")
+  #par.xaxs <- par("xaxs")
+  #par.yaxs <- par("yaxs")
+  #par.lend <- par("lend")
+  #par.xpd <- par("xpd")
+  #par.cex0 <- par("cex")
+  #par.mai0 <- par("mai")
+  #if(is.null(par.mai)){
+  #  par.mai = par.mai0
+  #}
+  #if (restore.par) {
+  #  on.exit(par(mar = par.mar0, xaxs = par.xaxs, yaxs = par.yaxs, lend = par.lend, xpd = par.xpd, cex = par.cex0, mai = par.mai0))
+  #}
+  
+  par(xaxs = "i", yaxs = "i", lend = 1,mar=c(0,0,0,0),cex=1.6)
   
   # data preparation and conditional assignment of color ramp functions and break point vectors 
   # to internal variables crfun and cbrks
-  
-  if (is.function(col.ramp.fun)) {
+    if (is.function(col.ramp.fun)) {
     # Case 1: a color ramp palette function is supplied
     crfun <- col.ramp.fun
     if (!is.null(col.breaks)) {
@@ -175,6 +214,13 @@ PlotMapOutput <- function(x, map, map.subid.column = 1, var.name = "", map.adj =
         #cbrks <- quantile(x[, 2], probs = seq(0, 1, .1))
       }
       
+    } else if (col.ramp.fun == "ColDiffPop") {
+      crfun <- ColDiffPop
+      if (!is.null(col.breaks)) {
+        cbrks <- col.breaks
+      } else {
+        cbrks <- quantile(x[, 2], probs = seq(0, 1, .1), na.rm = T)
+      }
     } else if (col.ramp.fun == "auto") {
       # Here follows a limited set of pre-defined color ramps and break point vectors for select HYPE variables, and
       # at the end a generic "catch the rest" treatment for undefined variables
@@ -225,6 +271,8 @@ PlotMapOutput <- function(x, map, map.subid.column = 1, var.name = "", map.adj =
     cbrks <- range(cbrks) + c(-1, 1)
   }
   # discretise the modeled values in x into classed groups, add to x as new column (of type factor)
+  x<-read.table(paste0(appSetput$runDir, "/results/001_forecast_", appInput$variable, "_", model.name, "_", appInput$area, ".txt"),
+                sep="\t", h=T)
   x[, 3] <- cut(x[, 2], breaks = cbrks, include.lowest = T)
   # replace the factor levels with color codes using the color ramp function assigned above
   levels(x[, 3]) <- crfun(length(cbrks) - 1)
@@ -232,9 +280,21 @@ PlotMapOutput <- function(x, map, map.subid.column = 1, var.name = "", map.adj =
   x[, 3] <- as.character(x[, 3])
   # give it a name
   names(x)[3] <- "color"
+  map<-shapefileData
   
+  if(pngORjpg==1){
+    CairoJPEG(filename = plotFileName, width = width, height = height, units = "px",bg = "white")
+  }else{
+    CairoPNG(filename = plotFileName, width = width, height = height, units = "px",bg = "white")
+  }
   # add x to subid map table (in data slot, indicated by @), merge by SUBID
-  map@data <- data.frame(map@data, x[match(map@data[, map.subid.column], x[,1]),])
+  if(appInput$model=="ww-hype"|appInput$model=="mosaic-hype") {
+    map@data <- data.frame(map@data, x[match(map@data[, "SUBID"], x[,1]),])
+  } else if(appInput$model=="niger-hype") {
+    map@data <- data.frame(map@data, x[match(map@data[, "SUBID"], x[,1]),])
+    plot(countries.shp.area,col=NA,border="grey")  # country boundaries
+  }
+  
   
   # update legend title if none was provided by user or "auto" selection
   if (is.null(legend.title)) {
@@ -346,9 +406,19 @@ PlotMapOutput <- function(x, map, map.subid.column = 1, var.name = "", map.adj =
     bbx <- bbox(map)
     # set user coordinates using a dummy plot (no fast way with Spatial polygons plot, therefore construct with SpatialPoints map)
     if(!is.null(main.title)){
-      plot(SpatialPoints(coordinates(map), proj4string = CRS(proj4string(map))), col = NULL, xlim = bbx[1, ], ylim = bbx[2, ],main=main.title)
-    }else{
-      plot(SpatialPoints(coordinates(map), proj4string = CRS(proj4string(map))), col = NULL, xlim = bbx[1, ], ylim = bbx[2, ])
+      par(xaxs = "i", yaxs = "i", lend = 1,mar=c(0,0,0,0),cex=graphScale)
+      if(appInput$model=="niger-hype") {
+        plot(SpatialPoints(coordinates(map), proj4string = CRS(proj4string(map))), col = NULL,main=main.title)
+      } else {
+        plot(SpatialPoints(coordinates(map), proj4string = CRS(proj4string(map))), col = NULL,main=main.title)
+        #plot(SpatialPoints(coordinates(map), proj4string = CRS(proj4string(map))), col = NULL, xlim = bbx[1, ], ylim = bbx[2, ],main=main.title)
+      }
+          }else{
+            if(appInput$model=="niger-hype") {
+              plot(SpatialPoints(coordinates(map), proj4string = CRS(proj4string(map))), col = NULL)
+            } else {
+              plot(SpatialPoints(coordinates(map), proj4string = CRS(proj4string(map))), col = NULL)
+            }
     }
     # create a map side ratio based on the device region in user coordinates and the map bounding box
     p.range.x <- diff(par("usr")[1:2])
@@ -368,6 +438,7 @@ PlotMapOutput <- function(x, map, map.subid.column = 1, var.name = "", map.adj =
     if (map.adj == 0) {
       pylim <- as.numeric(bbx[2, ])
       pxlim <- c(bbx[1, 1], bbx[1, 1] + diff(pylim)/psr)
+      pxlim <- as.numeric(bbx[1, ])
     } else if (map.adj == .5) {
       pylim <- as.numeric(bbx[2, ])
       pxlim <- c(mean(as.numeric(bbx[1, ])) - diff(pylim)/psr/2, mean(as.numeric(bbx[1, ])) + diff(pylim)/psr/2)
@@ -397,9 +468,21 @@ PlotMapOutput <- function(x, map, map.subid.column = 1, var.name = "", map.adj =
     par(new = TRUE)
   }
   if(!is.null(main.title)){
-    plot(map, col = map$color, border = NA, ylim = pylim, xlim = pxlim, add = add, main=main.title)
+    if(appInput$model=="niger-hype") {
+      plot(map, col = map$color, border = NA, main=main.title,add=T)
+    } else {
+      if(appInput$model=="niger-hype") {
+        plot(map, col = map$color, border = NA, main=main.title, add=T)
+      } else {
+        plot(map, col = map$color, border = NA, main=main.title)
+      }
+      
+    }
+    #plot(map, col = map$color, border = NA, main=main.title,add=T)
+    #plot(map, col = map$color, border = NA, ylim = pylim, xlim = pxlim, add = add, main=main.title)
   }else{
-    plot(map, col = map$color, border = NA, ylim = pylim, xlim = pxlim, add = add)
+    plot(map, col = map$color, border = NA, add=T)
+    #plot(map, col = map$color, border = NA, ylim = pylim, xlim = pxlim, add = add)
   }
   # legend
   if (plot.legend) {
@@ -495,8 +578,11 @@ PlotMapOutput <- function(x, map, map.subid.column = 1, var.name = "", map.adj =
                 yb = ly, 
                 len = nlen, cex.lab = .8)
   }
+  plot(countries.shp.area,col=NA,border="grey", add=T)  # country boundaries
   
-  
+  addscalebar(pos="bottomright", lwd=4, htin = 0.4,label.cex = 1.5)
+  addnortharrow(pos="topright",scale = 4)
+  dev.off()
   # invisible unless assigned: return map with added data and color codes
   invisible(map)
 }
@@ -655,16 +741,16 @@ writeWorldFile<-function(fileName, pxWidth, pxHeight, degWidth, degHeight, lonBa
 #   edate=as.POSIXct("1980-01-01",tz="GMT")
 
 # echo arguments to the TEP log file'
-rciop.log ("DEBUG", paste(" plot-mapoutput, fileDir: ",fileDir,sep=""), "/util/R/hypeapps-plot-mapoutput.R")
-rciop.log ("DEBUG", paste(" plot-mapoutput, plotDir: ",plotDir,sep=""), "/util/R/hypeapps-plot-mapoutput.R")
-rciop.log ("DEBUG", paste(" plot-mapoutput, mapFile: ",mapFile,sep=""), "/util/R/hypeapps-plot-mapoutput.R")
-rciop.log ("DEBUG", paste(" plot-mapoutput, rdataFile: ",rdataFile,sep=""), "/util/R/hypeapps-plot-mapoutput.R")
+#rciop.log ("DEBUG", paste(" plot-mapoutput, fileDir: ",fileDir,sep=""), "/util/R/hypeapps-plot-mapoutput.R")
+#rciop.log ("DEBUG", paste(" plot-mapoutput, plotDir: ",plotDir,sep=""), "/util/R/hypeapps-plot-mapoutput.R")
+#rciop.log ("DEBUG", paste(" plot-mapoutput, mapFile: ",mapFile,sep=""), "/util/R/hypeapps-plot-mapoutput.R")
+#rciop.log ("DEBUG", paste(" plot-mapoutput, rdataFile: ",rdataFile,sep=""), "/util/R/hypeapps-plot-mapoutput.R")
 
 # read map file
-mapData = ReadMapOutput(filename = paste(fileDir,mapFile,sep="/"))
+mapData = subbasin.shp.area
 
 # load subbasin spatial points data frame (shapefileData)
-load(rdataFile)
+#load(rdataFile)
 
 # # next line used only for development
 #shapefileData = shp
@@ -708,51 +794,3 @@ if(varName=="COUT"){
   mainTitle=paste(mainTitle," - Mean ", varName,"\n(",cdate,"-",edate,")",sep=", ")
   varPlot=varName
 }
-
-# graphics file name
-plotFileName = paste(plotDir,prefix.png,sep="/")
-plotFileName = paste(plotFileName,"_",substr(mapFile,1,nchar(mapFile)-3),sep="")
-if(pngORjpg==1){
-  plotFileName = paste(plotFileName,"jpg",sep="")
-}else{
-  plotFileName = paste(plotFileName,"png",sep="")
-}
-
-
-# Plot dimensions and World file
-ydiff = bbox(shapefileData)[2,2]-bbox(shapefileData)[2,1]
-xdiff = bbox(shapefileData)[1,2]-bbox(shapefileData)[1,1]
-
-width = round(xdiff/(1/60),digits=0)
-height = round(width * ydiff/xdiff*1.03,digits=0)
-
-
-cx = bbox(shapefileData)[1,2] - 0.5 * (bbox(shapefileData)[1,2]-bbox(shapefileData)[1,1])
-cy = bbox(shapefileData)[2,2] - 0.5 * (bbox(shapefileData)[2,2]-bbox(shapefileData)[2,1])
-wfres = writeWorldFile(paste(plotFileName,"w",sep=""), pxWidth=round(width,digits=0), pxHeight=height,
-                       degWidth=xdiff,degHeight=ydiff, lonBasin=cx, latBasin=cy, plotPos="center")
-
-
-# initiate jpeg or png file for plotting using Cairo graphics device
-if(pngORjpg==1){
-  CairoJPEG(filename = plotFileName, width = width, height = height, units = "px",bg = "white")
-}else{
-  CairoPNG(filename = plotFileName, width = width, height = height, units = "px",bg = "white")
-}
-
-# mapplot
-PlotMapOutput(x = mapData, 
-             map = shapefileData,
-             col.ramp.fun = "ColQ",
-             plot.scale = F,
-             plot.arrow = F,
-             legend.title = varPlot,
-             legend.pos = "topleft",
-             par.mar = c(0,0,0,0),par.cex = 3,par.mai=c(0,0,0,0))
-# text
-legend("bottomleft",legend = mainTitle,bty="n")
-# Close plot
-dev.off()
-
-
-

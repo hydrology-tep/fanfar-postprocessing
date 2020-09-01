@@ -27,9 +27,9 @@ library(lmomco)
 
 # hypeapp-hype-utils.R to import HYPE model outputs
 if(app.sys=="tep"){
-  source(paste(Sys.getenv("_CIOP_APPLICATION_PATH"),"util/R/hypeapps-hype-utils.R",sep="/"))
+  #source(paste(Sys.getenv("_CIOP_APPLICATION_PATH"),"util/R/hypeapps-utils.R",sep="/"))
 }else if(app.sys=="win"){
-  source(paste("application","util/R/hypeapps-hype-utils.R",sep="/"))
+  #source(paste("src/main/app-resources","util/R/hypeapps-hype-utils.R",sep="/"))
 }else{
   stop("app.sys not set (allowed vaues tep or win)")
 }
@@ -185,10 +185,68 @@ returnPeriodMagnitudes<-function(name.in=NULL,name.out="retlev.txt",wl.rp=c(2,5,
   
     # Write return period magnitude output file
     write.table(retlev,name.out,quote = F,row.names=F)  # note it writes with 11|12 decimals so reading in the object will have slighlty different values...
-  
     # return ok signal
     return(0)
   }else{
     return(-1)
   }
 }
+
+DeriveWarningClasses<-function (timeCoutDir, timeCoutFile,rp.fileDir, rp.magnitude.file, OutDir, Outfile,lead.time=5, method) {
+  retlev<-read.table(paste(rp.fileDir,rp.magnitude.file, sep="/"), header=T)
+  retlev2<-t(retlev[,-1])
+  colnames(retlev2)<-retlev[,"SUBID"];rm(retlev)
+  wl.rp<-as.numeric(sub("RP","",rownames(retlev2)))
+  if(is.null(warnings())){
+    print("Done.")
+  }else{
+    print("Some warning occurred.")
+  }
+  # Derive warning levels for the current forecast and save output
+  print("Deriving warning levels for current forecast...")
+  if(method!="waffi") {
+    thisq<-ReadTimeOutput(paste(timeCoutDir,timeCoutFile,sep="/"))
+  } else {
+    thisq<-read.table(paste(timeCoutDir,timeCoutFile,sep="/"), sep="\t",h=T)
+    #thisq<-ReadTimeOutput(paste(timeCoutDir,timeCoutFile,sep="/"))
+  }
+  wldef<-function(subid) {  
+    #subid<-"816"
+    mywl.daily<-NULL
+    for (j in 1:nrow(thisq)) {
+      myf<-thisq[j,subid]
+      if(is.na(myf)) {
+        myf<-0
+      }
+      mywl<-0
+      if(!any(is.na(retlev2[,subid]))) {  # ignoring if the return levels could not be estimated, then never warn
+        for(k in 1:length(wl.rp)) { #k<-1
+          if(any(myf>retlev2[k,subid])) {mywl<-k}
+        }}
+      mywl.daily<-c(mywl.daily, mywl)
+    }
+    #print(subid)
+    return(mywl.daily)
+  }
+  
+  # determine first and last date in file
+  cdate=as.character(thisq[1,1],format="%Y-%m-%d")
+  #  edate=as.character(thisq[nrow(thisq),1],format="%Y%m%d")
+  
+  # continue
+  colnames(thisq)<-sub("X","",colnames(thisq))
+  thisq<-thisq[,-1]  # remove date column as we don't use it here
+  #thisq<-thisq[1:lead.time,]
+  if(all(colnames(thisq)==colnames(retlev2))){ # check that the columns match
+    thiswl<-sapply(colnames(thisq),FUN = wldef)
+    thiswl.df<-cbind(colnames(thiswl), t(thiswl), apply(t(thiswl[1:lead.time,]), 1, max, na.rm=T))
+    colnames(thiswl.df)<-c("SUBID", paste0("Day", seq(1,10,1)), "WarningLevel")
+    #thiswl.df<-data.frame(SUBID=names(thiswl),WarningLevel=thiswl)
+    #writeLines(text=paste(" Warning levels based on magnitudes with return-period:", paste(wl.rp,collapse=", "), "years"),con=paste(plotDir,name.wl.txt,sep="/"))
+    suppressWarnings(write.table(thiswl.df,file=paste(OutDir,Outfile,sep="/"),append=T,row.names=F,quote=F,sep=","))
+    #rm(thiswl,thiswl.df)
+  }
+}
+
+#internal log succesful sourcing of file
+if(app.sys=="tep"){rciop.log ("DEBUG", paste("all functions sourced"), "/util/R/hypeapps-returnperiod-utils.R")}
