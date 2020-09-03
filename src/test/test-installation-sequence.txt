@@ -25,6 +25,7 @@ cd fanfar-postprocessing
 
 sudo conda install --file src/main/app-resources/dependencies/R/packages.list
 #sudo conda install -c aaraney r-hydrotsm
+sudo yum downgrade proj # From 4.8 to 4.7
 
 sudo conda create --name cairo-env --file src/main/app-resources/dependencies/R/cairo-env.list
 
@@ -37,8 +38,8 @@ mvn clean install
 ##############################
 Try to remove source of plot-scripts from main R-script to skip use or dependancy of cairo package when gdal is used.
 When time to call plot-scripts, activate conda cairo-env environment
-system("source active cairo-env")
+#system("source activate cairo-env")
+system("conda activate cairo-env")
 source plot-script(s)
-system("source deactive cairo-env") # if necessary for later source code
+system("conda deactivate") # if necessary for later source code
 ##############################
-

@@ -31,8 +31,12 @@ r-lmomco
 #r-cairo
 r-sp # r-lattice, via dependency
 r-raster
-gdal
+gdal=2.1.0=py27_5
 r-rgdal
+geos=3.5.0
+r-rgeos
+libiconv=1.14
+libnetcdf=4.4.1
 
 #r-prettymapr
 #r-abind

@@ -207,8 +207,8 @@ getHypeAppSetup<-function(modelName,
         rciop.copy(paste(paste(shapefile.basin.url,shapefile.basin.layer,sep="/"),shapefile.basin.ext[i],sep=""), shapefileDir)
       }
       
-      for(i in 1:length(shapefile.coutries.ext)){
-        rciop.copy(paste(paste(shapefile.coutries.url,shapefile.coutries.layer,sep="/"),shapefile.coutries.ext[i],sep=""), shapefileDir)
+      for(i in 1:length(shapefile.countries.ext)){
+        rciop.copy(paste(paste(shapefile.countries.url,shapefile.countries.layer,sep="/"),shapefile.countries.ext[i],sep=""), shapefileDir)
       }
     } else if(app.sys=="win") {
       for(i in 1:length(shapefile.basin.ext)){

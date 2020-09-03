@@ -97,8 +97,8 @@ if(app.sys=="tep"){
   source(paste(Sys.getenv("_CIOP_APPLICATION_PATH"), "util/R/hypeapps-returnperiod-utils.R", sep="/"))
   source(paste(Sys.getenv("_CIOP_APPLICATION_PATH"), "util/R/hypeapps-historicalyear-utils.R", sep="/"))
   source(paste(Sys.getenv("_CIOP_APPLICATION_PATH"), "util/R/hypeapps-waffi-index-utils.R", sep="/"))
-  source(paste(Sys.getenv("_CIOP_APPLICATION_PATH"), "util/R/hypeapps-plot-warninglevel-map_windows.R", sep="/"))
-  source(paste(Sys.getenv("_CIOP_APPLICATION_PATH"), "util/R/hypeapps-plot-impact-map.R", sep="/"))
+  #source(paste(Sys.getenv("_CIOP_APPLICATION_PATH"), "util/R/hypeapps-plot-warninglevel-map_windows.R", sep="/"))
+  #source(paste(Sys.getenv("_CIOP_APPLICATION_PATH"), "util/R/hypeapps-plot-impact-map.R", sep="/"))
   source(paste(Sys.getenv("_CIOP_APPLICATION_PATH"), "util/R/hyppeapps-trigger-distribution.R", sep="/"))
 
   rciop.log ("DEBUG", paste(" libraries loaded and utilities sourced"), "/node_postprocessing/run.R")
@@ -150,6 +150,16 @@ log.res=appLogWrite(logText = "HypeApp setup read",fileConn = logFile$fileConn)
 #################################################################################
 ## 4 - Prepare mapWarningLevel files or index files
 ## ------------------------------------------------------------------------------
+if(app.sys=="tep"){
+  print("conda activate cairo-env")
+  system("conda activate cairo-env")
+  source(paste(Sys.getenv("_CIOP_APPLICATION_PATH"), "util/R/hypeapps-plot-warninglevel-map_windows.R", sep="/"))
+  source(paste(Sys.getenv("_CIOP_APPLICATION_PATH"), "util/R/hypeapps-plot-impact-map.R", sep="/"))
+  source(paste(Sys.getenv("_CIOP_APPLICATION_PATH"), "util/R/hypeapps-plot-mapoutput.R", sep="/"))
+}else{
+  source(paste(getwd(), "app-resources/util/R/hypeapps-plot-mapoutput.R", sep="/"))
+}
+
 ## Alert threshold
 magnitude(appInput  = app.input, appSetput=app.setup)
 if(app.sys=="tep"){rciop.log ("DEBUG", paste("Produce return period magnitude and warning classes"), "/node_postprocessing/run.R")}
@@ -174,7 +184,7 @@ if( app.input$alertmethod!="none") {
   cdate=format(Sys.time(), "%Y-%m-%d_%H%M")
   edate=format(Sys.time(), "%Y-%m-%d_%H%M")
   modelName<-app.input$model
-  source(paste(getwd(), "app-resources/util/R/hypeapps-plot-mapoutput.R", sep="/"))
+  #source(paste(getwd(), "app-resources/util/R/hypeapps-plot-mapoutput.R", sep="/"))
   PlotMapOutput(appInput  = app.input, appSetput=app.setup,  map.subid.column = 2, var.name = "",
                 col.ramp.fun = crfun,
                 plot.scale = F,
@@ -192,7 +202,7 @@ log.res=appLogWrite(logText = "Produce map showing the maximum risk level",fileC
 ## 5 - Produce impact map
 ## ------------------------------------------------------------------------------
 if( app.input$alertmethod!="none") {
-ImpactOutput_Map(appInput  = app.input, appSetput=app.setup, popmethod=1)
+  ImpactOutput_Map(appInput  = app.input, appSetput=app.setup, popmethod=1)
 }
 
 if(app.sys=="tep"){rciop.log ("DEBUG", "Produce impact map", "/node_postprocessing/run.R")}
@@ -221,6 +231,12 @@ system("Rscript -e rmarkdown::render('E:/AGRHYMET/FANFAR/fanfar-postprocessing/R
 #################################################################################
 ## 7 - Output
 ## ------------------------------------------------------------------------------
+if(app.sys=="tep"){
+  print("conda deactivate cairo-env")
+  system("conda deactivate") # Change from conda cairo-env to base environment
+}
+
+
 app.outfiles <- dir(app.setup$resDir)
 log.res=appLogWrite(logText = "HypeApp outputs prepared",fileConn = logFile$fileConn)
 
