@@ -26,7 +26,7 @@ if(app.sys=="tep") {
   #library(rasterVis)
   #library(hydroTSM)
 } else {
-  library(ncdf4)
+  #library(ncdf4)
   library(abind)
   library(rasterVis)
   library(hydroTSM)

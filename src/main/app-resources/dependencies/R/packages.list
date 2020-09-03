@@ -5,31 +5,36 @@
 # Used R libraries/packages in current source code
 # (Hopefully a later version of R to reduce any dependency problems that may arise
 # when adding additional R packages)
-#libnetcdf=4.4.1
-#libiconv=1.14
+
+##############################
+# Used R-packages acc. to source code:
+# rciop
+# data.table  # hypeapps-utils.R  hypeapps-plot-warninglevel-map_windows.R
+# sp          # hypeapps-utils.R  hypeapps-plot-warninglevel-map_windows.R
+# rgdal       # hypeapps-utils.R
+# rgeos       # hypeapps-utils.R
+# lmomco      # hypeapps-returnperiod-utils.R
+# #ncdf4       # hypeapps-waffi-index-utils.R
+# abind       # hypeapps-waffi-index-utils.R
+# rasterVis   # hypeapps-waffi-index-utils.R
+# hydroTSM    # hypeapps-waffi-index-utils.R
+# Cairo       # hypeapps-plot-warninglevel-map_windows.R hypeapps-plot-mapoutput.R hypeapps-plot-impact-map.R
+# lattice     # hypeapps-plot-impact-map.R
+# raster      # hypeapps-plot-impact-map.R
+##############################
+
+r-base
 r-rciop
 r-data.table
-r-sp
-r-rgdal
-#gdal=2.1.0=py27_5
-r-rgeos
-r-ncdf4
-r-raster
-#r-maptools
-#r-foreign
 r-lmomco
+#cairo # Error : .onLoad failed in loadNamespace() for 'Cairo', details: libjpeg.so.9: cannot open shared object file: No such file or directory
+#r-cairo
+r-sp # r-lattice, via dependency
+r-raster
+gdal
+r-rgdal
 
-# Version due to gdal
-#geos=3.5.0
-
-#This shouldn't be necessary
-# r-essentials
-
-#Additional
-cairo
-r-cairo
-r-lattice
-#prettymapr
-#abind
-#rasterVis # r-raster?
-#hydroTSM
+#r-prettymapr
+#r-abind
+#r-rastervis
+#r-hydrotsm # sudo conda install -c aaraney r-hydrotsm

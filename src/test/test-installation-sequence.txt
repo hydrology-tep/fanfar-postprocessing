@@ -1,0 +1,44 @@
+Sequence hypeapps-forecast and fanfar-forecast
+
+The usual setup for a user to start working with the application on its VM is from a readme, but its currently a manual step:
+
+for fanfar-forecast:
+    sudo yum install -y miniconda proj libgfortran hdf5 netcdf
+for hypeapps-forecast
+    sudo yum install -y miniconda openjpeg2 proj libgfortran ghostscript-fonts urw-fonts
+#Downgrade proj from version 4.8 to 4.7
+sudo yum downgrade proj
+and then:
+git clone https://github.com/hydrology-tep/fanfar-forecast # or hypeapps-forecast
+sudo conda install -y --file fanfar-forecast/src/main/app-resources/dependencies/R/packages.list # or hypeapps-forecast
+for hypeapps-forecast only:
+    sudo conda create --name cairo-env --file hypeapps-forecast/src/main/app-resources/dependencies/R/cairo-env.list
+cd fanfar-forecast # or hypeapps-forecast
+mvn clean install
+
+
+##############################
+Test installation of fanfar-postprocessing
+
+sudo yum install -y miniconda
+cd fanfar-postprocessing
+
+sudo conda install --file src/main/app-resources/dependencies/R/packages.list
+#sudo conda install -c aaraney r-hydrotsm
+
+sudo conda create --name cairo-env --file src/main/app-resources/dependencies/R/cairo-env.list
+
+#sudo yum erase -y miniconda
+#sudo yum install -y miniconda
+#sudo conda install --file src/main/app-resources/dependencies/R/packages.list
+#conda list
+mvn clean install
+
+##############################
+Try to remove source of plot-scripts from main R-script to skip use or dependancy of cairo package when gdal is used.
+When time to call plot-scripts, activate conda cairo-env environment
+system("source active cairo-env")
+source plot-script(s)
+system("source deactive cairo-env") # if necessary for later source code
+##############################
+

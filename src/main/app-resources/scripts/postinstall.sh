@@ -11,6 +11,5 @@
 
 /opt/anaconda/bin/conda install -y --file /application/dependencies/R/packages.list
 
-# Now when postprocessing (maps, trigger etc) moved to fanfar-postprocessing.git we shouldn't need
-# to change version of library/package jpeg
+# May need to setup a separate conda environment when using cairo and dependency to jpeg=9 since gdal seems to require jpeg=8
 /opt/anaconda/bin/conda create --name cairo-env --file /application/dependencies/R/cairo-env.list
