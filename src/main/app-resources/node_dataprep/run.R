@@ -1,6 +1,19 @@
 #!/opt/anaconda/bin/Rscript --vanilla --slave --quiet
-#
+
+######!/opt/anaconda/bin/Rscript --vanilla --slave --quiet
+
 # /hypeapps-eodata/src/main/app-resources/node_dataprep/run.R
+
+print('start.....')
+
+###syscmd = paste("/opt/anaconda/envs/postprocessing-env/bin/Rscript"," --vanilla --slave --quite ", Sys.getenv("_CIOP_APPLICATION_PATH"), "/node_dataprep/test.R", sep="")
+syscmd = paste("/opt/anaconda/envs/postprocessing-env/bin/Rscript"," --vanilla --slave --quiet ", Sys.getenv("_CIOP_APPLICATION_PATH"), "/node_dataprep/test.R", sep="")
+
+system(syscmd)
+
+print('end....')
+
+q(save="no", status = 0)
 
 
 # begin Bernard Minoungou
