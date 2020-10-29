@@ -1,7 +1,3 @@
-#!/opt/anaconda/envs/postprocessing-env/bin/Rscript --vanilla --slave
-
-
-####!/opt/anaconda/envs/postprocessing-env/bin/Rscript --vanilla --slave --quiet
 
 print ("aaaaaa")
 
@@ -11,7 +7,7 @@ print ("aaaaaa")
 #.libPaths()
 print(.libPaths())
 
-library("lmomco")
+#library("lmomco")
 
 print(sessionInfo())
-print ("sdf")
+print ("bbbbbbb")

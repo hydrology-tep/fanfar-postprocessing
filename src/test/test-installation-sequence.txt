@@ -6,15 +6,77 @@ for fanfar-forecast:
     sudo yum install -y miniconda proj libgfortran hdf5 netcdf
 for hypeapps-forecast
     sudo yum install -y miniconda openjpeg2 proj libgfortran ghostscript-fonts urw-fonts
-#Downgrade proj from version 4.8 to 4.7
-sudo yum downgrade proj
+for fanfar-postprocessing
+    sudo yum install -y miniconda R # probably more packages
+    #sudo yum install -y miniconda
 and then:
 git clone https://github.com/hydrology-tep/fanfar-forecast # or hypeapps-forecast
-sudo conda install -y --file fanfar-forecast/src/main/app-resources/dependencies/R/packages.list # or hypeapps-forecast
+####sudo conda install -y --file fanfar-forecast/src/main/app-resources/dependencies/R/packages.list # or hypeapps-forecast
 for hypeapps-forecast only:
+    #Downgrade proj from version 4.8 to 4.7
+    sudo yum downgrade proj
+    sudo conda install -y --file hypeapps-forecast/src/main/app-resources/dependencies/R/packages.list
     sudo conda create --name cairo-env --file hypeapps-forecast/src/main/app-resources/dependencies/R/cairo-env.list
-cd fanfar-forecast # or hypeapps-forecast
+for fanfar-forecast only:
+    #Downgrade proj from version 4.8 to 4.7
+    sudo conda install -y --file fanfar-forecast/src/main/app-resources/dependencies/R/packages.list
+    sudo yum downgrade proj
+    sudo conda install -y --file fanfar-forecast/src/main/app-resources/dependencies/R/packages.list
+for fanfar-postprocessing only:
+    #skipped due to R via yum   sudo conda install -y --file fanfar-postprocessing/src/main/app-resources/dependencies/R/base.list
+    sudo conda create --name postprocessing-env --file fanfar-postprocessing/src/main/app-resources/dependencies/R/postprocessing-env.list
+    sudo conda create --name cairo-env --file fanfar-postprocessing/src/main/app-resources/dependencies/R/cairo-env.list
+    
+    ### If you need to install additional packages manually for any of the environments:
+    # Either use conda activate <env> to switch to the specific environment, e.g.
+    sudo conda install r-data.table r-lmomco
+
+    # Or use conda install --name <env> to install in the specific environment, e.g.
+    sudo conda install --name postprocessing-env r-data.table r-lmomco
+    
+    # To view available conda environments:
+    conda info --envs
+
+    # To view avilable packages in a conda environment:
+    conda list # for base
+    conda list --name postprocessing-env
+    conda list --name cairo-env
+        
+cd fanfar-forecast # or hypeapps-forecast or fanfar-postprocessing
 mvn clean install
+
+
+##############################
+For fanfar-postprocessing:
+To run R from the different conda environments (with specific R packages for each environment):
+
+    #R from the yum installation:
+    #syscmd = paste0("/usr/bin/Rscript"," --vanilla --slave --quiet ", Sys.getenv("_CIOP_APPLICATION_PATH"), "/node_dataprep/run.R")
+    ### or Rscript (instead of included path /usr/bin/)
+    #system(syscmd)
+    
+    R from the conda installation of environment base (default):
+    # We don't intend to use this, but could be used instead of installing R with yum.
+    syscmd = paste0("/opt/anaconda/bin/Rscript"," --vanilla --slave --quiet ", Sys.getenv("_CIOP_APPLICATION_PATH"), "/node_dataprep/test.R")
+    system(syscmd)
+    
+    syscmd = paste0("/usr/bin/Rscript"," --vanilla --slave --quiet ", Sys.getenv("_CIOP_APPLICATION_PATH"), "/node_postprocess/run.R")
+    system(syscmd)
+
+    R from the conda installation of environment postprocessing-env:
+    syscmd = paste0("/opt/anaconda/envs/postprocessing-env/bin/Rscript"," --vanilla --slave --quiet ", Sys.getenv("_CIOP_APPLICATION_PATH"), "/node_dataprep/test.R")
+    system(syscmd)
+
+    R from the conda installation of environment cairo-env:
+    syscmd = paste0("/opt/anaconda/envs/cairo-env/bin/Rscript"," --vanilla --slave --quiet ", Sys.getenv("_CIOP_APPLICATION_PATH"), "/node_dataprep/test.R")
+    system(syscmd)
+
+
+
+
+
+
+
 
 
 ##############################

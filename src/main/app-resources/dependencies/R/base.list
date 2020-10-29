@@ -1,6 +1,6 @@
 # This file may be used to create an environment using:
-# $ conda create --name <env> --file <this file>
-# platform: linux-64
+## $ conda create --name <env> --file <this file>
+## platform: linux-64
 
 ##############################
 # Used R-packages acc. to source code:
@@ -20,11 +20,3 @@
 ##############################
 
 r-base
-cairo
-r-cairo
-jpeg # jpeg=9b
-r-lattice
-r-raster
-r-sp
-r-data.table
-r-rciop
