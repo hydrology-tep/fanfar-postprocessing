@@ -1,7 +1,14 @@
-#!/opt/anaconda/bin/Rscript --vanilla --slave --quiet
+#!/opt/anaconda/envs/postprocessing-env/bin/Rscript --vanilla --slave --quiet
+
+##### #!/opt/anaconda/bin/Rscript --vanilla --slave --quiet
+##### #!/usr/bin/Rscript --vanilla --slave --quiet
+
+# run 'which Rscript' in the terminal. If the path differs you may have to change the first line above.
+# When using certain R packages, call Rscript in the appropriate conda environment with the appropriate source code file.
+
 #
 # /hypeapps-eodata/src/main/app-resources/node_dataprep/run.R
-
+#
 
 # begin Bernard Minoungou
 

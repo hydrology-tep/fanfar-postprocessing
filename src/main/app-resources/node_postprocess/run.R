@@ -1,6 +1,14 @@
-#!/opt/anaconda/bin/Rscript --vanilla --slave --quiet
+#!/opt/anaconda/envs/postprocessing-env/bin/Rscript --vanilla --slave --quiet
+
+##### #!/opt/anaconda/bin/Rscript --vanilla --slave --quiet
+##### #!/usr/bin/Rscript --vanilla --slave --quiet
+
+# run 'which Rscript' in the terminal. If the path differs you may have to change the first line above.
+# When using certain R packages, call Rscript in the appropriate conda environment with the appropriate source code file.
+
 #
 # /hypeapps-forecast/src/main/app-resources/node_postprocess/run.R
+#
 
 # begin Bernard Minoungou
 
@@ -46,6 +54,11 @@ app.name = "postprocessing"
 if(!exists("app.sys")){
   app.sys ="tep"
 }
+
+## use R installed in cairo-env
+use.r.cairoenv = FALSE # TRUE
+use.r.cairoenv = use.r.cairoenv && app.sys == "tep"
+
 ## ------------------------------------------------------------------------------
 ## load rciop package and set working directory to TMPDIR when running on TEP 
 if(app.sys=="tep"){
@@ -150,93 +163,102 @@ log.res=appLogWrite(logText = "HypeApp setup read",fileConn = logFile$fileConn)
 #################################################################################
 ## 4 - Prepare mapWarningLevel files or index files
 ## ------------------------------------------------------------------------------
-if(app.sys=="tep"){
-  print("conda activate cairo-env")
-  system("conda activate cairo-env")
+if(use.r.cairoenv){
+  # source(paste(Sys.getenv("_CIOP_APPLICATION_PATH"), "util/R/hypeapps-plot-warninglevel-map_windows.R", sep="/"))
+  # source(paste(Sys.getenv("_CIOP_APPLICATION_PATH"), "util/R/hypeapps-plot-impact-map.R", sep="/"))
+  # source(paste(Sys.getenv("_CIOP_APPLICATION_PATH"), "util/R/hypeapps-plot-mapoutput.R", sep="/"))
+  
+  # Call postprocess2.R, section 1,4-6, with R installed in the environment cairo-env
+  syscmd = paste0("/opt/anaconda/envs/cairo-env/bin/Rscript"," --vanilla --slave --quiet ", Sys.getenv("_CIOP_APPLICATION_PATH"), "/node_postprocess/postprocess2.R")
+  system(syscmd)
+  
+  # or (only an example):
+  #args = paste0('--path_shapefiles',' ',app.setup$XYZ,' ','--alertmethod',' ',app.input$alertmethod)
+  #system2(syscmd,args=args)
+  
+}else if(app.sys=="tep"){
   source(paste(Sys.getenv("_CIOP_APPLICATION_PATH"), "util/R/hypeapps-plot-warninglevel-map_windows.R", sep="/"))
   source(paste(Sys.getenv("_CIOP_APPLICATION_PATH"), "util/R/hypeapps-plot-impact-map.R", sep="/"))
   source(paste(Sys.getenv("_CIOP_APPLICATION_PATH"), "util/R/hypeapps-plot-mapoutput.R", sep="/"))
+  
 }else{
   source(paste(getwd(), "app-resources/util/R/hypeapps-plot-mapoutput.R", sep="/"))
 }
 
-## Alert threshold
-magnitude(appInput  = app.input, appSetput=app.setup)
-if(app.sys=="tep"){rciop.log ("DEBUG", paste("Produce return period magnitude and warning classes"), "/node_postprocessing/run.R")}
-log.res=appLogWrite(logText = "Produce return period magnitude and warning classes",fileConn = logFile$fileConn)
+if(! use.r.cairoenv){
+
+  ## Alert threshold
+  magnitude(appInput  = app.input, appSetput=app.setup)
+  if(app.sys=="tep"){rciop.log ("DEBUG", paste("Produce return period magnitude and warning classes"), "/node_postprocessing/run.R")}
+  log.res=appLogWrite(logText = "Produce return period magnitude and warning classes",fileConn = logFile$fileConn)
 
 
-#################################################################################
-## 4 - Produce map showing the maximum risk level
-## ------------------------------------------------------------------------------
-if( app.input$alertmethod!="none") {
-  PlotRiskMap(appInput  = app.input, appSetput=app.setup)
-} else {
-  if(app.input$variable=="timeCOUT") {
-    varName="COUT"
-    mapFile = "mapCOUT.txt" 
-    crfun=colorRampPalette(c("#ede7ff", "#2300ff"))
-  } else if (app.input$variable=="timeCPRC") {
-    crfun <- colorRampPalette(c("#e0e7e8", "#00508c"))
-    varName="CPRC"
-    mapFile = "mapCOUT.txt" 
+  #################################################################################
+  ## 4 - Produce map showing the maximum risk level
+  ## ------------------------------------------------------------------------------
+  if( app.input$alertmethod!="none") {
+    PlotRiskMap(appInput  = app.input, appSetput=app.setup)
+  } else {
+    if(app.input$variable=="timeCOUT") {
+      varName="COUT"
+      mapFile = "mapCOUT.txt" 
+      crfun=colorRampPalette(c("#ede7ff", "#2300ff"))
+    } else if (app.input$variable=="timeCPRC") {
+      crfun <- colorRampPalette(c("#e0e7e8", "#00508c"))
+      varName="CPRC"
+      mapFile = "mapCOUT.txt" 
+    }
+    cdate=format(Sys.time(), "%Y-%m-%d_%H%M")
+    edate=format(Sys.time(), "%Y-%m-%d_%H%M")
+    modelName<-app.input$model
+    #source(paste(getwd(), "app-resources/util/R/hypeapps-plot-mapoutput.R", sep="/"))
+    PlotMapOutput(appInput  = app.input, appSetput=app.setup,  map.subid.column = 2, var.name = "",
+                  col.ramp.fun = crfun,
+                  plot.scale = F,
+                  plot.arrow = F,
+                  legend.title = varPlot,
+                  legend.pos = "topleft",
+                  par.mar = c(0,0,0,0),par.cex = 3,par.mai=c(0,0,0,0))
   }
-  cdate=format(Sys.time(), "%Y-%m-%d_%H%M")
-  edate=format(Sys.time(), "%Y-%m-%d_%H%M")
-  modelName<-app.input$model
-  #source(paste(getwd(), "app-resources/util/R/hypeapps-plot-mapoutput.R", sep="/"))
-  PlotMapOutput(appInput  = app.input, appSetput=app.setup,  map.subid.column = 2, var.name = "",
-                col.ramp.fun = crfun,
-                plot.scale = F,
-                plot.arrow = F,
-                legend.title = varPlot,
-                legend.pos = "topleft",
-                par.mar = c(0,0,0,0),par.cex = 3,par.mai=c(0,0,0,0))
-}
 
-if(app.sys=="tep"){rciop.log ("DEBUG", "Produce map showing the maximum risk level", "/node_postprocessing/run.R")}
-log.res=appLogWrite(logText = "Produce map showing the maximum risk level",fileConn = logFile$fileConn)
+  if(app.sys=="tep"){rciop.log ("DEBUG", "Produce map showing the maximum risk level", "/node_postprocessing/run.R")}
+  log.res=appLogWrite(logText = "Produce map showing the maximum risk level",fileConn = logFile$fileConn)
 
 
-#################################################################################
-## 5 - Produce impact map
-## ------------------------------------------------------------------------------
-if( app.input$alertmethod!="none") {
-  ImpactOutput_Map(appInput  = app.input, appSetput=app.setup, popmethod=1)
-}
+  #################################################################################
+  ## 5 - Produce impact map
+  ## ------------------------------------------------------------------------------
+  if( app.input$alertmethod!="none") {
+    ImpactOutput_Map(appInput  = app.input, appSetput=app.setup, popmethod=1)
+  }
 
-if(app.sys=="tep"){rciop.log ("DEBUG", "Produce impact map", "/node_postprocessing/run.R")}
-log.res=appLogWrite(logText = "Produce impact map",fileConn = logFile$fileConn)
-
-
-#################################################################################
-## 6 - Triggers
-## ------------------------------------------------------------------------------
-if(app.sys=="win") {
-  trigger_distribution_outfiles <- TriggerDistribution(appInput  = app.input, appSetput=app.setup, dist.list.url=dist.list.url)
-} else {
-  trigger_distribution_outfiles <- TriggerDistribution(appInput  = app.input, appSetput=app.setup, dist.list.url=dist.list.url)
-}
-
-if(app.sys=="tep"){rciop.log ("DEBUG", "Trigger distribution", "/node_postprocessing/run.R")}
-log.res=appLogWrite(logText = "Trigger distribution",fileConn = logFile$fileConn)
+  if(app.sys=="tep"){rciop.log ("DEBUG", "Produce impact map", "/node_postprocessing/run.R")}
+  log.res=appLogWrite(logText = "Produce impact map",fileConn = logFile$fileConn)
 
 
-#################################################################################
-## 6 - Generate pdf and html files for emails
-system(paste0("Rscript -e rmarkdown::render('", app.setup$resDir, "/rmarkdown_fanfar.rmd','all')"))
-system("Rscript -e rmarkdown::render('E:/AGRHYMET/FANFAR/fanfar-postprocessing/RunDir/rmarkdown_fanfar.rmd','html_document')")
+  #################################################################################
+  ## 6 - Triggers
+  ## ------------------------------------------------------------------------------
+  if(app.sys=="win") {
+    trigger_distribution_outfiles <- TriggerDistribution(appInput  = app.input, appSetput=app.setup, dist.list.url=dist.list.url)
+  } else {
+    trigger_distribution_outfiles <- TriggerDistribution(appInput  = app.input, appSetput=app.setup, dist.list.url=dist.list.url)
+  }
 
+  if(app.sys=="tep"){rciop.log ("DEBUG", "Trigger distribution", "/node_postprocessing/run.R")}
+  log.res=appLogWrite(logText = "Trigger distribution",fileConn = logFile$fileConn)
+
+
+  #################################################################################
+  ## 6 - Generate pdf and html files for emails
+  system(paste0("Rscript -e rmarkdown::render('", app.setup$resDir, "/rmarkdown_fanfar.rmd','all')"))
+  system("Rscript -e rmarkdown::render('E:/AGRHYMET/FANFAR/fanfar-postprocessing/RunDir/rmarkdown_fanfar.rmd','html_document')")
+
+} # if(! use.r.cairoenv)
 
 #################################################################################
 ## 7 - Output
 ## ------------------------------------------------------------------------------
-if(app.sys=="tep"){
-  print("conda deactivate cairo-env")
-  system("conda deactivate") # Change from conda cairo-env to base environment
-}
-
-
 app.outfiles <- dir(app.setup$resDir)
 log.res=appLogWrite(logText = "HypeApp outputs prepared",fileConn = logFile$fileConn)
 
